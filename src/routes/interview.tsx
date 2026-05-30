@@ -123,23 +123,29 @@ function InterviewPage() {
   const progress = (elapsed / duration) * 100;
 
   const looking = metrics.eyeContactScore > 0.55;
-  const emotionLabel =
-    metrics.smileScore > 0.4
-      ? "Happy"
-      : metrics.mouthOpenScore > 0.3
-      ? "Speaking"
-      : metrics.faceDetected
-      ? "Neutral"
-      : "—";
+  const emotionLabel = metrics.faceDetected ? metrics.emotion : "—";
+  // const emotionLabel =
+  //   metrics.smileScore > 0.4
+  //     ? "Happy"
+  //     : metrics.mouthOpenScore > 0.3
+  //     ? "Speaking"
+  //     : metrics.faceDetected
+  //     ? "Neutral"
+  //     : "—";
 
   return (
     <div className="min-h-screen">
       <header className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-4 w-4" /> Back
         </Link>
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span className={`h-2 w-2 rounded-full ${running ? "animate-pulse bg-destructive" : "bg-muted-foreground/40"}`} />
+          <span
+            className={`h-2 w-2 rounded-full ${running ? "animate-pulse bg-destructive" : "bg-muted-foreground/40"}`}
+          />
           {running ? "Recording" : "Idle"}
         </div>
       </header>
@@ -173,13 +179,18 @@ function InterviewPage() {
             </div>
 
             <div className="absolute inset-x-0 bottom-0 h-1 bg-background/40">
-              <div className="h-full bg-[image:var(--gradient-primary)] transition-all" style={{ width: `${progress}%` }} />
+              <div
+                className="h-full bg-[image:var(--gradient-primary)] transition-all"
+                style={{ width: `${progress}%` }}
+              />
             </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-card/60 p-4 backdrop-blur">
             <div className="flex items-center gap-3">
-              <label className="text-xs uppercase tracking-wider text-muted-foreground">Duration</label>
+              <label className="text-xs uppercase tracking-wider text-muted-foreground">
+                Duration
+              </label>
               <input
                 type="range"
                 min={60}
@@ -202,9 +213,13 @@ function InterviewPage() {
               }`}
             >
               {running ? (
-                <><Square className="h-4 w-4" /> Stop Interview</>
+                <>
+                  <Square className="h-4 w-4" /> Stop Interview
+                </>
               ) : (
-                <><Play className="h-4 w-4" /> {loadingModel ? "Loading…" : "Start Interview"}</>
+                <>
+                  <Play className="h-4 w-4" /> {loadingModel ? "Loading…" : "Start Interview"}
+                </>
               )}
             </button>
           </div>
@@ -218,13 +233,54 @@ function InterviewPage() {
         </div>
 
         <aside className="space-y-3">
-          <h2 className="px-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">Live status</h2>
-          <StatusRow icon={<Camera className="h-4 w-4" />} label="Face detected" value={metrics.faceDetected ? "Yes" : "No"} ok={metrics.faceDetected} />
-          <StatusRow icon={<Eye className="h-4 w-4" />} label="Looking at camera" value={looking ? "Yes" : "Off-center"} ok={looking} />
-          <StatusRow icon={<Smile className="h-4 w-4" />} label="Emotion" value={emotionLabel} ok={metrics.faceDetected} />
-          <StatusRow icon={<Gauge className="h-4 w-4" />} label="Eye contact" value={`${Math.round(metrics.eyeContactScore * 100)}%`} ok={metrics.eyeContactScore > 0.55} />
-          <StatusRow icon={<Smile className="h-4 w-4" />} label="Smile" value={`${Math.round(metrics.smileScore * 100)}%`} ok />
-          <StatusRow icon={<Gauge className="h-4 w-4" />} label="Mouth open" value={`${Math.round(metrics.mouthOpenScore * 100)}%`} ok />
+          <h2 className="px-2 text-xs font-medium uppercase tracking-wider text-muted-foreground">
+            Live status
+          </h2>
+          <div className="rounded-2xl border border-primary/30 bg-card/80 p-5 text-center backdrop-blur">
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">
+              AI Emotion Analysis
+            </p>
+
+            <p className="mt-3 text-3xl font-bold text-primary">
+              {metrics.faceDetected ? metrics.emotion : "—"}
+            </p>
+          </div>
+          <StatusRow
+            icon={<Camera className="h-4 w-4" />}
+            label="Face detected"
+            value={metrics.faceDetected ? "Yes" : "No"}
+            ok={metrics.faceDetected}
+          />
+          <StatusRow
+            icon={<Eye className="h-4 w-4" />}
+            label="Looking at camera"
+            value={looking ? "Yes" : "Off-center"}
+            ok={looking}
+          />
+          <StatusRow
+            icon={<Smile className="h-4 w-4" />}
+            label="Emotion"
+            value={emotionLabel}
+            ok={metrics.faceDetected}
+          />
+          <StatusRow
+            icon={<Gauge className="h-4 w-4" />}
+            label="Eye contact"
+            value={`${Math.round(metrics.eyeContactScore * 100)}%`}
+            ok={metrics.eyeContactScore > 0.55}
+          />
+          <StatusRow
+            icon={<Smile className="h-4 w-4" />}
+            label="Smile"
+            value={`${Math.round(metrics.smileScore * 100)}%`}
+            ok
+          />
+          <StatusRow
+            icon={<Gauge className="h-4 w-4" />}
+            label="Mouth open"
+            value={`${Math.round(metrics.mouthOpenScore * 100)}%`}
+            ok
+          />
 
           <div className="mt-4 rounded-2xl border border-border bg-card/60 p-4 backdrop-blur">
             <p className="text-xs uppercase tracking-wider text-muted-foreground">Prompt</p>
@@ -238,15 +294,29 @@ function InterviewPage() {
   );
 }
 
-function StatusRow({ icon, label, value, ok }: { icon: React.ReactNode; label: string; value: string; ok: boolean }) {
+function StatusRow({
+  icon,
+  label,
+  value,
+  ok,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  ok: boolean;
+}) {
   return (
     <div className="flex items-center justify-between rounded-xl border border-border bg-card/60 p-4 backdrop-blur">
       <div className="flex items-center gap-3">
-        <div className="grid h-8 w-8 place-items-center rounded-lg bg-secondary text-primary">{icon}</div>
+        <div className="grid h-8 w-8 place-items-center rounded-lg bg-secondary text-primary">
+          {icon}
+        </div>
         <span className="text-sm">{label}</span>
       </div>
       <div className="flex items-center gap-2">
-        <span className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-[color:var(--success)]" : "bg-destructive"}`} />
+        <span
+          className={`h-1.5 w-1.5 rounded-full ${ok ? "bg-[color:var(--success)]" : "bg-destructive"}`}
+        />
         <span className="text-sm font-medium">{value}</span>
       </div>
     </div>
