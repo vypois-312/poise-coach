@@ -1,7 +1,8 @@
 import "./lib/error-capture";
-
 import { consumeLastCapturedError } from "./lib/error-capture";
 import { renderErrorPage } from "./lib/error-page";
+import { parseInterviewMetricsBody } from "./lib/api/interview.functions";
+import { saveInterviewMetrics } from "./lib/insforge.server";
 
 type ServerEntry = {
   fetch: (request: Request, env: unknown, ctx: unknown) => Promise<Response> | Response;
@@ -18,8 +19,6 @@ async function getServerEntry(): Promise<ServerEntry> {
   return serverEntryPromise;
 }
 
-// h3 swallows in-handler throws into a normal 500 Response with body
-// {"unhandled":true,"message":"HTTPError"} — try/catch alone never fires for those.
 async function normalizeCatastrophicSsrResponse(response: Response): Promise<Response> {
   if (response.status < 500) return response;
   const contentType = response.headers.get("content-type") ?? "";
@@ -39,6 +38,32 @@ async function normalizeCatastrophicSsrResponse(response: Response): Promise<Res
 
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
+    const url = new URL(request.url);
+
+    if (url.pathname === "/api/interviews/metrics" && request.method === "POST") {
+      try {
+        const body = await request.json();
+        const metrics = parseInterviewMetricsBody(body);
+        const row = await saveInterviewMetrics(metrics);
+        return new Response(
+          JSON.stringify({
+            id: row.id,
+            sessionId: row.session_id,
+            createdAt: row.created_at,
+          }),
+          { headers: { "content-type": "application/json" } },
+        );
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Failed to save metrics";
+        const status = message.includes("Missing INSFORGE") ? 503 : 400;
+        return new Response(JSON.stringify({ error: message }), {
+          status,
+          headers: { "content-type": "application/json" },
+        });
+      }
+    }
+
+    // Luồng TanStack Start mặc định
     try {
       const handler = await getServerEntry();
       const response = await handler.fetch(request, env, ctx);

@@ -49,6 +49,7 @@ export const defaultMetrics: FaceMetrics = {
   mouthOpenScore: 0,
   smileScore: 0,
   emotion: "Neutral",
+  confidenceScore: 0,
 };
 
 export type EmotionLabel =
@@ -121,7 +122,9 @@ export function metricsFromResult(result: FaceLandmarkerResult): FaceMetrics {
 
   //const eyeContactScore = Math.max(0, Math.min(1, 1 - headOffset - lookOut / 8));
 
-  const mouthOpenScore = getBlend(result, "jawOpen");
+  const mouthOpenBlend = getBlend(result, "mouthOpen");
+  const jawOpenBlend = getBlend(result, "jawOpen");
+  const mouthOpenScore = Math.min(1, (jawOpenBlend * 0.6 + mouthOpenBlend * 0.4) * 1.5);
 
   // const smileScore = Math.min(
   //   1,

@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { Play, Square, Camera, Eye, Smile, Clock, ArrowLeft, Gauge } from "lucide-react";
+import { saveInterviewMetricsToApi } from "@/lib/api/save-interview-metrics";
 import {
   getFaceLandmarker,
   metricsFromResult,
@@ -18,6 +19,9 @@ function InterviewPage() {
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number | null>(null);
   const lastTsRef = useRef<number>(-1);
+  const sessionIdRef = useRef(crypto.randomUUID());
+  const metricsRef = useRef<FaceMetrics>(defaultMetrics);
+  const savingRef = useRef(false);
 
   const [duration, setDuration] = useState(90);
   const [running, setRunning] = useState(false);
@@ -33,7 +37,28 @@ function InterviewPage() {
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
     setCamOn(false);
+    metricsRef.current = defaultMetrics;
     setMetrics(defaultMetrics);
+  };
+
+  const finishInterview = async (finalElapsed: number) => {
+    if (savingRef.current) return;
+    savingRef.current = true;
+    const snapshot = metricsRef.current;
+
+    try {
+      await saveInterviewMetricsToApi({
+        sessionId: sessionIdRef.current,
+        durationSeconds: finalElapsed > 0 ? finalElapsed : undefined,
+        ...snapshot,
+      });
+    } catch (err) {
+      console.error("Failed to save interview metrics", err);
+    } finally {
+      savingRef.current = false;
+      stopCamera();
+      navigate({ to: "/result" });
+    }
   };
 
   const startCamera = async () => {
@@ -65,7 +90,9 @@ function InterviewPage() {
           lastTsRef.current = ts;
           try {
             const result = landmarker.detectForVideo(v, ts);
-            setMetrics(metricsFromResult(result));
+            const next = metricsFromResult(result);
+            metricsRef.current = next;
+            setMetrics(next);
           } catch {
             /* ignore frame errors */
           }
@@ -94,8 +121,7 @@ function InterviewPage() {
         if (e + 1 >= duration) {
           clearInterval(tick);
           setRunning(false);
-          stopCamera();
-          setTimeout(() => navigate({ to: "/result" }), 400);
+          void finishInterview(duration);
           return duration;
         }
         return e + 1;
@@ -108,9 +134,9 @@ function InterviewPage() {
   const toggle = async () => {
     if (running) {
       setRunning(false);
-      stopCamera();
-      navigate({ to: "/result" });
+      await finishInterview(elapsed);
     } else {
+      sessionIdRef.current = crypto.randomUUID();
       setElapsed(0);
       if (!camOn) await startCamera();
       setRunning(true);
